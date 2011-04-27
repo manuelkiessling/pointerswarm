@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<style type="text/css">
+			body {
+				margin: 0;
+				padding: 0;
+				border: 0;
+			}
+			#playground {
+				margin: 0;
+				padding: 0;
+				border: 0;
+				height: 100%;
+				width: 100%;
+			}
+			.user {
+				position: fixed;
+				margin: 0;
+				padding: 0;
+				border: 0;
+			}
+			.user img {
+				margin-left: -5px;
+				margin-top: -1px;
+				padding: 0;
+				border: 0;
+			}
+		</style>
+		<script src="http://localhost/socket.io/socket.io.js"></script>
+		<script src="md5.js"></script>
+		
+		<script type="text/javascript">
+			var name = prompt("Please enter your name:", "");
+
+			var socket = new io.Socket("localhost");
+			socket.connect();
+			
+			socket.on('connect', function() {
+				message = {}
+				message.type = "name";
+				message.name = name;
+				socket.send(message);
+				document.onmousemove = onMove;
+				document.onclick = onClick;
+			});
+			
+			socket.on('message', function(message) {
+				if (message.type == "newUser") {
+					addUserToView(document.getElementById("playground"), message.sessionId, message.name);
+
+				} else if (message.type == "existingUsers" ) {
+					for (sessionId in message.users) {
+						addUserToView(document.getElementById("playground"), sessionId, message.users[sessionId].name);
+					}
+
+				}	else if (message.type == "userChangedPosition") {
+					document.getElementById("u" + message.sessionId).style.left = message.x + "px";
+					document.getElementById("u" + message.sessionId).style.top = message.y + "px";
+
+				}	else if (message.type == "userClicked") {
+					mouseClick(message.elementId);
+
+				} else if (message.type == "userLeft") {
+					document.getElementById("u" + message.sessionId).style.display = "none";
+				}
+				
+			});
+			
+			socket.on('disconnect', function() {
+			});
+	
+			var running = false;
+			function onMove(event) {
+				event = event || window.event;
+				if (!running) {
+					running = true;
+					setTimeout(function(){sendCoordinates(event);running=false;}, 10);
+				}
+			}
+
+			var clickInProgress = false;
+			function onClick(event) {
+				if (clickInProgress) {
+					clickInProgress = false;
+					return true;
+				}
+				message = {};
+				message.type = "click";
+				message.elementId = event.target.id;
+				message.x = event.pageX;
+				message.y = event.pageY;
+				socket.send(message);
+			}
+			
+			function sendCoordinates(event) {
+				message = {};
+				message.type = "position";
+				message.x = event.pageX;
+				message.y = event.pageY;
+				socket.send(message);
+			}
+			
+			function addUserToView(area, userId, userName) {
+				var old = area.innerHTML;
+				area.innerHTML = old + '<div class="user" id="u' + userId + '"><img src="mousepointer.png" width="22" height="22" />' + userName + '</div>';
+			}
+			
+			function mouseClick(elementId) {
+				clickInProgress = true;
+				var evt = document.createEvent("MouseEvents");
+			  evt.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+			  var el = document.getElementById(elementId);
+			  var canceled = !el.dispatchEvent(evt);
+			}
+
+	</script>
+		
+	</head>
+	<body>
+		<div id="playground">
+			<input type="checkbox" id="checkbox1" />
+			<input type="checkbox" id="checkbox2" />
+			<input type="checkbox" id="checkbox3" />
+			<input type="checkbox" id="checkbox4" />
+			<input type="checkbox" id="checkbox5" />
+			<input type="checkbox" id="checkbox6" />
+			<input type="checkbox" id="checkbox7" />
+			<input type="checkbox" id="checkbox8" />
+			<input type="checkbox" id="checkbox9" />
+			<input type="checkbox" id="checkbox10" />
+		</div>
+	</body>
+</html>
