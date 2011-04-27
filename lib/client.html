@@ -1,6 +1,20 @@
 <html>
 	<head>
+		<script src="http://localhost/socket.io/socket.io.js"></script> 
 		<script type="text/javascript">
+			var socket = new io.Socket("localhost");
+			socket.connect();
+			
+			socket.on('connect', function() {
+				document.onmousemove = onMove;
+			});
+			
+			socket.on('message', function(){
+			});
+			
+			socket.on('disconnect', function(){
+			});
+		
 			function updateFields(x, y) {
 				document.getElementById("textX").value = x;
 				document.getElementById("textY").value = y;
@@ -9,8 +23,11 @@
 			function onMove(event) {
 				event = event || window.event;
 				updateFields(event.pageX, event.pageY);
-			}
-			document.onmousemove = onMove;
+				position = {};
+				position.x = event.pageX;
+				position.y = event.pageY;
+				socket.send(position);
+			}			
 		</script>
 	</head>
 	<body>
